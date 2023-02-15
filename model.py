@@ -23,6 +23,7 @@ class Conv1dReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.BatchNorm1d(out_channels),
             nn.ReLU()
         )
     
@@ -35,6 +36,7 @@ class LinearReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=out_features, bias=bias),
+            nn.BatchNorm1d(out_features),
             nn.ReLU()
         )
 
@@ -60,6 +62,7 @@ class TargetRepresentation(nn.Module):
     def __init__(self, block_num, vocab_size, embedding_num):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embedding_num, padding_idx=0)
+        self.normalization = nn.BatchNorm1d(embedding_num)
         self.block_list = nn.ModuleList()
         for block_idx in range(block_num):
             self.block_list.append(
@@ -70,6 +73,7 @@ class TargetRepresentation(nn.Module):
         
     def forward(self, x):
         x = self.embed(x).permute(0, 2, 1)
+        x = self.normalization(x)
         feats = [block(x) for block in self.block_list]
         x = torch.cat(feats, -1)
         x = self.linear(x)
