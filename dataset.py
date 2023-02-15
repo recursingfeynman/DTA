@@ -27,7 +27,5 @@ class GNNDataset(InMemoryDataset):
         pass
 
 if __name__ == "__main__":
-    dataset = GNNDataset(root='preprocessed_data/celegans')
-    print(dataset[0])
-    print(dataset[0].x)
+    dataset = GNNDataset(root='preprocessed_data/papyrus')
     
