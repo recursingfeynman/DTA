@@ -23,6 +23,7 @@ class Conv1dReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
+            nn.BatchNorm1d(out_channels),
             nn.ReLU()
         )
     
@@ -35,6 +36,7 @@ class LinearReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=out_features, bias=bias),
+            nn.BatchNorm1d(out_features),
             nn.ReLU()
         )
 
@@ -219,8 +221,8 @@ class MGraphDTA(nn.Module):
         )
 
     def forward(self, data):
-        target = data.target
-        protein_x = self.protein_encoder(target)
+        sequence = data.sequence
+        protein_x = self.protein_encoder(sequence)
         ligand_x = self.ligand_encoder(data)
 
         x = torch.cat([protein_x, ligand_x], dim=-1)
