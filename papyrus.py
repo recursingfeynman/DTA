@@ -45,18 +45,11 @@ def get_data(vocab, activity_threshold = 6.25):
     print("Counts: ")
     [print((x, y)) for x, y in zip(counts_df.Proteins.values, counts_df.Counts.values)]
 
-    le = LabelEncoder()
-    pdata['activity'] = pdata[['pchembl_value_Mean', 'accession']].apply(lambda x: get_names(x[0], x[1]), axis = 1)
-    pdata['activity'] = le.fit_transform(pdata['activity'])
-    pdata['activity'].value_counts()
-    pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity"})[['smiles', 'sequence', 'activity', 'affinity']].reset_index(drop = True)
-    pdata['labels'] = pdata['activity'].apply(lambda x: le.inverse_transform([x])[0])
+    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: 1 if x > activity_threshold else 0)
+    pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
+    pdata['protein'] = pdata['protein'].apply(lambda x: vocab['proteins'][x])
     
-    meta = [(x, str(le.inverse_transform([x])[0])) for x in sorted(pdata['activity'].unique())]
-
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
-    print(f"Encodings (threshold = {activity_threshold}):")
-    [print(x) for x in meta];
-
+    
     pdata.to_csv("data/raw/data.csv", index = False)
     print("Saved to data/raw/data.csv")
