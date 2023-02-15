@@ -83,6 +83,7 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
 
     pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, act_threshold, inact_threshold))
     pdata = pdata.dropna(subset = ['activity'])
+    pdata['activity'] = pdata['activity'].astype(int)
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     pdata.to_csv("data/raw/data.csv", index = False)
