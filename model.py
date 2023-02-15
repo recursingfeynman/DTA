@@ -23,7 +23,6 @@ class Conv1dReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.BatchNorm1d(out_channels),
             nn.ReLU()
         )
     
@@ -36,7 +35,6 @@ class LinearReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=out_features, bias=bias),
-            nn.BatchNorm1d(out_features),
             nn.ReLU()
         )
 
@@ -202,13 +200,13 @@ class GraphDenseNet(nn.Module):
         return x
 
 class MGraphDTA(nn.Module):
-    def __init__(self, block_num, vocab_protein_size, embedding_size=128, filter_num=32, out_dim=1, head = True):
+    def __init__(self, block_num, vocab_protein_size, embedding_size=128, filter_num=32, out_dim=2):
         super().__init__()
-        self.head = head
         self.protein_encoder = TargetRepresentation(block_num, vocab_protein_size, embedding_size)
-        self.ligand_encoder = GraphDenseNet(num_input_features=18, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
+        self.ligand_encoder = GraphDenseNet(num_input_features=87, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
+
         self.classifier = nn.Sequential(
-            nn.Linear(filter_num * 3 + 96, 1024),
+            nn.Linear(filter_num * 3 * 2, 1024),
             nn.ReLU(),
             nn.Dropout(0.1),
             nn.Linear(1024, 1024),
@@ -221,14 +219,12 @@ class MGraphDTA(nn.Module):
         )
 
     def forward(self, data):
-        sequence = data.sequence
-        protein_x = self.protein_encoder(sequence)
+        target = data.target
+        protein_x = self.protein_encoder(target)
         ligand_x = self.ligand_encoder(data)
 
         x = torch.cat([protein_x, ligand_x], dim=-1)
-        
-        if self.head:
-            x = self.classifier(x)
+        x = self.classifier(x)
 
         return x
 
