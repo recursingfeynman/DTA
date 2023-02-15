@@ -54,17 +54,19 @@ def get_data(vocab, activity_threshold = 6.25):
     print("Saved as data/raw/data.csv")
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
-def get_specific_class(class_names, activity_threshold):
+def get_specific_class(class_names, activity_threshold, version = "latest", drop_duplicates = False):
 
-    download_papyrus(version='latest', structures=False, descriptors = None)
+    download_papyrus(version=version, structures=False, descriptors = None)
 
     sample_data = read_papyrus(is3d=False, chunksize = 100_000, source_path=None)
     protein_data = read_protein_set(source_path=None)
     
-    # uniprot_ids = list(vocab['proteins'].keys())
-    f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=[class_names])
+    f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=class_names)
     data = consume_chunks(f, total = 13, progress = True)
     pdata = data[['SMILES', 'accession', 'pchembl_value_Mean']]
+
+    if drop_duplicates:
+        pdata = pdata.drop_duplicates(subset = ['SMILES'])
 
     for accession in np.unique(data['accession'].values):
         for idx, pid in enumerate(protein_data.target_id.values):
