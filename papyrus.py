@@ -87,8 +87,8 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
-    pdata.to_csv("data/raw/data.csv", index = False)
-    print("Saved as data/raw/data.csv")
+    pdata.to_csv("data/papyrus/raw/data.csv", index = False)
+    print("Saved as data/papyrus/raw/data.csv")
 
     
     
