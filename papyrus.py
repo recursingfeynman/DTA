@@ -6,13 +6,13 @@ import numpy as np
 import pandas as pd
 
 from sklearn.preprocessing import LabelEncoder
-def get_data(uniprot_ids, vocab, activity_threshold = 6.25):
+def get_data(vocab, activity_threshold = 6.25):
     download_papyrus(version='latest', structures=False, descriptors = None)
 
     sample_data = read_papyrus(is3d=False, chunksize = 100_000, source_path=None)
     protein_data = protein_data = read_protein_set(source_path=None)
     
-    # uniprot_ids = ["P08183","P43245", "P06795","P21447", "Q9UNQ0", "Q80W57", "Q7TMS5"]
+    uniprot_ids = list(vocab['proteins'].keys())
     
     f = keep_accession(sample_data, uniprot_ids)
     f = keep_quality(data = f, min_quality='medium')
@@ -20,21 +20,6 @@ def get_data(uniprot_ids, vocab, activity_threshold = 6.25):
     # f = keep_type(data = f, activity_types=['Ki', 'KD', 'IC50'])
     data = consume_chunks(f, total = 13, progress = True)
     data.head()
-
-    # activity_threshold = 6.25
-
-    # vocab = {
-    #     "activity" : ["Inactive", "Active"],
-    #     "proteins" : {
-    #         "P08183" : "PGP",
-    #         "P43245" : "PGP",
-    #         "P06795" : "PGP",
-    #         "P21447" : "PGP",
-    #         "Q9UNQ0" : "BCRP",
-    #         "Q80W57" : "BCRP",
-    #         "Q7TMS5" : "BCRP"
-    #     }
-    # }
 
     def get_names(activity, pid):
         activity = int(activity > activity_threshold)
@@ -46,6 +31,11 @@ def get_data(uniprot_ids, vocab, activity_threshold = 6.25):
         for idx, pid in enumerate(protein_data.target_id.values):
             if uni in pid:
                 pdata.loc[pdata['accession'] == uni, 'sequence'] = protein_data.iloc[idx]['Sequence']
+
+    pdata = pdata.drop_duplicates(subset = ['SMILES'])
+    
+    print("Counts:")
+    print(pdata['accession'].value_counts())
 
     le = LabelEncoder()
     pdata['activity'] = pdata[['pchembl_value_Mean', 'accession']].apply(lambda x: get_names(x[0], x[1]), axis = 1)
