@@ -165,7 +165,7 @@ class GNNDataset(InMemoryDataset):
             data = DATA.Data(
                     x=torch.FloatTensor(x),
                     edge_index=torch.LongTensor(edge_index).transpose(1, 0),
-                    target=torch.LongTensor([target]),
+                    sequence=torch.LongTensor([target]),
                     activity=torch.LongTensor([activity]),
                     affinity=torch.FloatTensor([affinity])
                 )
