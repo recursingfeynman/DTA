@@ -54,7 +54,7 @@ class GNNDataset(InMemoryDataset):
 
     def process_data(self, data_path):
         df = pd.read_csv(data_path)
-        smiles = df['smiles']
+        smiles = df['smiles'].unique()
         graph_dict = dict()
         for smile in tqdm(smiles, total=len(smiles)):
             mol = Chem.MolFromSmiles(smile)
