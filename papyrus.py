@@ -36,7 +36,7 @@ def get_data(vocab, activity_threshold = 6.25):
     
     print("Counts:")
     counts_df = pd.DataFrame({
-        "Protein" : list(pdata['accession'].value_counts().index),
+        "Proteins" : list(pdata['accession'].value_counts().index),
         "Counts" : list(pdata['accession'].value_counts().values)
         })
 
