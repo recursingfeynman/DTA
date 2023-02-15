@@ -1,5 +1,5 @@
 from papyrus_scripts.download import download_papyrus
-from papyrus_scripts.preprocess import keep_quality, keep_organism, keep_accession, keep_type, consume_chunks
+from papyrus_scripts.preprocess import keep_quality, keep_organism, keep_accession, keep_type, keep_protein_class,consume_chunks
 from papyrus_scripts.reader import read_papyrus,read_protein_set
 
 import numpy as np
@@ -13,13 +13,12 @@ def get_data(vocab, activity_threshold = 6.25):
     protein_data = read_protein_set(source_path=None)
     
     uniprot_ids = list(vocab['proteins'].keys())
-    
     f = keep_accession(sample_data, uniprot_ids)
     f = keep_quality(data = f, min_quality='medium')
+
     # f = keep_organism(data= f, protein_data=protein_data, organism=['Human', 'Rat', 'Mouse'], generic_regex=True)
     # f = keep_type(data = f, activity_types=['Ki', 'KD', 'IC50'])
     data = consume_chunks(f, total = 13, progress = True)
-    data.head()
 
     def get_names(activity, pid):
         activity = int(activity > activity_threshold)
@@ -45,11 +44,40 @@ def get_data(vocab, activity_threshold = 6.25):
     print("Counts: ")
     [print((x, y)) for x, y in zip(counts_df.Proteins.values, counts_df.Counts.values)]
 
-    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: 1 if x > activity_threshold else 0)
+    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: 1 if x >= activity_threshold else 0)
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
     pdata['protein'] = pdata['protein'].apply(lambda x: vocab['proteins'][x])
     
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     
     pdata.to_csv("data/raw/data.csv", index = False)
-    print("Saved to data/raw/data.csv")
+    print("Saved as data/raw/data.csv")
+
+# class_names = {'l3': 'SLC superfamily of solute carriers'}
+def get_specific_class(class_names, activity_threshold):
+
+    download_papyrus(version='latest', structures=False, descriptors = None)
+
+    sample_data = read_papyrus(is3d=False, chunksize = 100_000, source_path=None)
+    protein_data = read_protein_set(source_path=None)
+    
+    # uniprot_ids = list(vocab['proteins'].keys())
+    f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=[class_names])
+    data = consume_chunks(f, total = 13, progress = True)
+    pdata = data[['SMILES', 'accession', 'pchembl_value_Mean']]
+
+    for accession in np.unique(data['accession'].values):
+        for idx, pid in enumerate(protein_data.target_id.values):
+            if accession in pid:
+                pdata.loc[pdata['accession'] == accession, 'sequence'] = protein_data.iloc[idx]['Sequence']
+
+    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: 1 if x >= activity_threshold else 0)
+    pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
+    print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
+    pdata.to_csv("data/raw/data.csv", index = False)
+    print("Saved as data/raw/data.csv")
+
+    
+    
+    
+    
