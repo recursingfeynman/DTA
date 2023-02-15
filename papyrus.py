@@ -4,6 +4,7 @@ from papyrus_scripts.reader import read_papyrus,read_protein_set
 
 import numpy as np
 import pandas as pd
+import os
 
 from sklearn.preprocessing import LabelEncoder
 def get_data(vocab, activity_threshold = 6.25):
@@ -14,9 +15,6 @@ def get_data(vocab, activity_threshold = 6.25):
     
     uniprot_ids = list(vocab['proteins'].keys())
     f = keep_accession(sample_data, uniprot_ids)
-    f = keep_quality(data = f, min_quality='medium')
-
-    # f = keep_organism(data= f, protein_data=protein_data, organism=['Human', 'Rat', 'Mouse'], generic_regex=True)
     # f = keep_type(data = f, activity_types=['Ki', 'KD', 'IC50'])
     data = consume_chunks(f, total = 13, progress = True)
 
@@ -50,7 +48,9 @@ def get_data(vocab, activity_threshold = 6.25):
     
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     
-    pdata.to_csv("data/raw/data.csv", index = False)
+    os.makedirs("./data/papyrus/raw/", exist_ok = True)
+
+    pdata.to_csv("data/papurys/raw/data.csv", index = False)
     print("Saved as data/raw/data.csv")
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
@@ -86,6 +86,7 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
     pdata['activity'] = pdata['activity'].astype(int)
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
+    os.makedirs("./data/papyrus/raw/", exist_ok = True)
     pdata.to_csv("data/raw/data.csv", index = False)
     print("Saved as data/raw/data.csv")
 
