@@ -10,7 +10,7 @@ def get_data(vocab, activity_threshold = 6.25):
     download_papyrus(version='latest', structures=False, descriptors = None)
 
     sample_data = read_papyrus(is3d=False, chunksize = 100_000, source_path=None)
-    protein_data = protein_data = read_protein_set(source_path=None)
+    protein_data = read_protein_set(source_path=None)
     
     uniprot_ids = list(vocab['proteins'].keys())
     
@@ -34,17 +34,16 @@ def get_data(vocab, activity_threshold = 6.25):
 
     pdata = pdata.drop_duplicates(subset = ['SMILES'])
     
-    print("Counts:")
     counts_df = pd.DataFrame({
         "Proteins" : list(pdata['accession'].value_counts().index),
         "Counts" : list(pdata['accession'].value_counts().values)
         })
 
-    counts_df['Proteins'] = counts_df['Proteins'].apply(lambda x: vocab[x])
-    counts_df = counts_df.groupby("Proteins").sum()
+    counts_df['Proteins'] = counts_df['Proteins'].apply(lambda x: vocab['proteins'][x])
+    counts_df = counts_df.groupby("Proteins", as_index = False).sum()
     
     print("Counts: ")
-    [(x, y) for x, y in zip(counts_df.Proteins.values, counts_df.Counts.values)]
+    [print((x, y)) for x, y in zip(counts_df.Proteins.values, counts_df.Counts.values)]
 
     le = LabelEncoder()
     pdata['activity'] = pdata[['pchembl_value_Mean', 'accession']].apply(lambda x: get_names(x[0], x[1]), axis = 1)
