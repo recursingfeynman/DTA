@@ -35,7 +35,16 @@ def get_data(vocab, activity_threshold = 6.25):
     pdata = pdata.drop_duplicates(subset = ['SMILES'])
     
     print("Counts:")
-    print(pdata['accession'].value_counts())
+    counts_df = pd.DataFrame({
+        "Protein" : list(pdata['accession'].value_counts().index),
+        "Counts" : list(pdata['accession'].value_counts().values)
+        })
+
+    counts_df['Proteins'] = counts_df['Proteins'].apply(lambda x: vocab[x])
+    counts_df = counts_df.groupby("Proteins").sum()
+    
+    print("Counts: ")
+    [(x, y) for x, y in zip(counts_df.Proteins.values, counts_df.Counts.values)]
 
     le = LabelEncoder()
     pdata['activity'] = pdata[['pchembl_value_Mean', 'accession']].apply(lambda x: get_names(x[0], x[1]), axis = 1)
