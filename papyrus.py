@@ -50,9 +50,9 @@ def get_data(vocab, activity_threshold = 6.25):
     pdata['activity'] = le.fit_transform(pdata['activity'])
     pdata['activity'].value_counts()
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity"})[['smiles', 'sequence', 'activity', 'affinity']].reset_index(drop = True)
-
+    pdata['labels'] = pdata['activity'].apply(lambda x: le.inverse_transform([x])[0])
+    
     meta = [(x, str(le.inverse_transform([x])[0])) for x in sorted(pdata['activity'].unique())]
-
 
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     print(f"Encodings (threshold = {activity_threshold}):")
