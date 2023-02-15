@@ -60,4 +60,4 @@ def get_data(uniprot_ids, vocab, activity_threshold = 6.25):
     print(f"Encodings (threshold = {activity_threshold}):")
     [print(x) for x in meta];
 
-    return pdata, meta
+    pdata.to_csv("data/raw/data.csv", index = False)
