@@ -25,23 +25,20 @@ def min_max_scale(x, xmin, xmax):
     x = (x - xmin) / (xmax + xmin)
     return x
 
-def data_split_train_val_test(data_root='data', data_set='human'):
+def data_split_train_val_test(data_root='data', data_set='human', split = 'stratified', sizes = [0.6, 0.2, 0.2]:
 
     data_path = osp.join(data_root, data_set, 'raw', 'data.csv')
     data_df = pd.read_csv(data_path)
 
     # Split data in train:val:test = 8:1:1 with the same random seed as previous study.
     # Please see https://github.com/masashitsubaki/CPI_prediction
-    # data_shuffle = data_df.sample(frac=1.)
-    # train_split_idx = int(len(data_shuffle) * 0.7)
-    # df_train = data_shuffle[:train_split_idx]
-    # df_val_test = data_shuffle[train_split_idx:]
-    # val_split_idx = int(len(df_val_test) * 0.5)
-    # df_val = df_val_test[:val_split_idx]
-    # df_test = df_val_test[val_split_idx:]
-
-    df_train, df_val = train_test_split(data_df, stratify = data_df['activity'], test_size = 0.4)
-    df_val, df_test = train_test_split(df_val, stratify = df_val['activity'], test_size = 0.5)
+    
+    if split == 'stratified':
+        df_train, df_val = train_test_split(data_df, stratify = data_df['activity'], test_size = sizes[1] + sizes[2])
+        df_val, df_test = train_test_split(df_val, stratify = df_val['activity'], test_size = sizes[1] / (sizes[1] + sizes[2]))
+    else:
+        df_train, df_val = train_test_split(data_df, shuffle = True, test_size = sizes[1] + sizes[2])
+        df_val, df_test = train_test_split(df_val, shuffle = True, test_size = sizes[1] / sizes[1] + sizes[2])
     
     xmin = df_train['affinity'].min()
     xmax = df_train['affinity'].max()
@@ -54,7 +51,7 @@ def data_split_train_val_test(data_root='data', data_set='human'):
     df_val.to_csv(osp.join(data_root, data_set, 'raw', 'data_val.csv'), index=False)
     df_test.to_csv(osp.join(data_root, data_set, 'raw', 'data_test.csv'), index=False)
 
-    df_train.describe().to_csv(osp.join(data_root, data_set, 'raw', 'statistics.csv'). index = False)
+    df_train.describe().to_csv(osp.join(data_root, data_set, 'raw', 'statistics.csv'), index = False)
 
     print(f"{data_set} split done!")
     print("Number of data: ", len(data_df))
@@ -238,8 +235,9 @@ class GNNDataset(InMemoryDataset):
         data, slices = self.collate(test_list)
         torch.save((data, slices), self.processed_paths[2])
 
-if __name__ == "__main__":
-    data_split_train_val_test(data_root='data', data_set='papyrus')
-    GNNDataset(root='data/papyrus')
+def preprocess(data_root = 'data', data_set = 'papyrus', split = 'stratified')
+    data_split_train_val_test(data_root=data_root, data_set=data_set, split=split)
+    GNNDataset(root = osp.join(data_root, data_set))
+    print("Preprocessed.")
 
 
