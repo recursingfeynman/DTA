@@ -311,23 +311,23 @@ class RegressionLearner(object):
 
         metrics = dict()
 
-        metrics['MSE'] = mean_squared_error
-        metrics['RMSE'] = mean_squared_error
-        metrics['MAE'] = mean_absolute_error
+        metrics['mse'] = mean_squared_error
+        metrics['rmse'] = mean_squared_error
+        metrics['mae'] = mean_absolute_error
 
         print("Evaluation report: ")
-        print("{:<15s} : {:.4f} ± {:.2f}".format("Loss", np.mean(loss), np.std(loss)))
+        print("{:<15s} : {:.4f} ± {:.2f}".format("loss", np.mean(loss), np.std(loss)))
 
         if isinstance(compute_metrics, str):
             compute_metrics = [compute_metrics]
 
         for l in compute_metrics:
-            if l.lower == "rmse":
+            if l.lower() == "rmse":
                 score = metrics[l](labels, logits, squared = False)
             else:
                 score = metrics[l](labels, logits)
 
-            print("{:<15s} : {:.4f}".format(k, score))         
+            print("{:<15s} : {:.4f}".format(l, score))         
 
         return {"labels" : labels, "logits" : logits}
                 
