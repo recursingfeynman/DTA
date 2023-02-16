@@ -212,14 +212,14 @@ class MGraphDTA(nn.Module):
         self.classifier = classifier
 
     def forward(self, data):
-        target = data.target
-        protein_x = self.protein_encoder(target)
+        # target = data.target
+        # protein_x = self.protein_encoder(target)
         ligand_x = self.ligand_encoder(data)
 
-        x = torch.cat([protein_x, ligand_x], dim=-1)
+        # x = torch.cat([protein_x, ligand_x], dim=-1)
         
         if self.classifier is not None:
-            x = self.classifier(x)
+            x = self.classifier(ligand_x)
 
         return x
 
