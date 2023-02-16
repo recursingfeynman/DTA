@@ -25,7 +25,7 @@ def min_max_scale(x, xmin, xmax):
     x = (x - xmin) / (xmax + xmin)
     return x
 
-def data_split_train_val_test(data_root='data', data_set='human', split = 'stratified', sizes = [0.6, 0.2, 0.2]:
+def data_split_train_val_test(data_root='data', data_set='human', split = 'stratified', sizes = [0.6, 0.2, 0.2]):
 
     data_path = osp.join(data_root, data_set, 'raw', 'data.csv')
     data_df = pd.read_csv(data_path)
