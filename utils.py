@@ -42,6 +42,8 @@ class ClassificationLearner(object):
             panel = f"{phase}/{l}"
 
             if l == 'auroc':
+                if self.log_config.multi_class == 'raise':
+                    probs = probs[:, 1]
                 score = metrics[l](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
             elif l == 'loss':
                 wandb.log({panel : loss})
@@ -155,18 +157,25 @@ class ClassificationLearner(object):
         loss = np.array(loss)
 
         metrics = dict()
-
-        metrics['Auroc'] = roc_auc_score(labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
-        metrics['Accuracy'] = accuracy_score(labels, preds)
-        metrics['Precision'] = precision_score(labels, preds, average = self.log_config.average, zero_division = 0)
-        metrics['Recall'] = recall_score(labels, preds, average = self.log_config.average, zero_division = 0)
-        metrics['F1'] = f1_score(labels, preds, average = self.log_config.average, zero_division = 0)
+        metrics['AUROC'] = roc_auc_score
+        metrics['Accuracy'] = accuracy_score
+        metrics['Precision'] = precision_score
+        metrics['Recall'] = recall_score
+        metrics['F1'] = f1_score
 
         print("Evaluation report: ")
         print("{:<15s} : {:.4f} ± {:.2f}".format("Loss", np.mean(loss), np.std(loss)))
-        for k in metrics.keys():
-            if k.lower() in compute:
-                print("{:<15s} : {:.4f}".format(k, metrics[k]))
+
+        if isinstance(compute, str):
+            compute = [compute]
+
+        for l in compute:
+            if l.lower() == 'auroc':
+                score = metrics["AUROC"](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
+            else:
+                score = metrics[l](labels, preds, average = self.log_config.average, zero_division = 0)
+
+            print("{:<15s} : {:.4f}".format(k, score))
 
         return {"labels" : labels, "preds" : preds, "probs" : probs}
                 
@@ -297,15 +306,23 @@ class RegressionLearner(object):
 
         metrics = dict()
 
-        metrics['MSE'] = mean_squared_error(labels, logits)
-        metrics['RMSE'] = mean_squared_error(labels, logits, squared = True)
-        metrics['MAE'] = mean_absolute_error(labels, logits)
+        metrics['MSE'] = mean_squared_error
+        metrics['RMSE'] = mean_squared_error
+        metrics['MAE'] = mean_absolute_error
 
         print("Evaluation report: ")
         print("{:<15s} : {:.4f} ± {:.2f}".format("Loss", np.mean(loss), np.std(loss)))
-        for k in metrics.keys():
-            if k.lower() in compute:
-                print("{:<15s} : {:.4f}".format(k, metrics[k]))
+
+        if isinstance(compute, str):
+            compute = [compute]
+
+        for l in compute:
+            if l.lower == "rmse":
+                score = metrics[l](labels, logits, squared = False)
+            else:
+                score = metrics[l](labels, logits)
+
+            print("{:<15s} : {:.4f}".format(k, score))         
 
         return {"labels" : labels, "logits" : logits}
                 
