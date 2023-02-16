@@ -66,7 +66,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=class_names)
     data = consume_chunks(f, total = 13, progress = True)
     pdata = data[['SMILES', 'accession', 'pchembl_value_Mean']]
-
+    
     if drop_duplicates:
         pdata = pdata.drop_duplicates(subset = ['SMILES'])
 
@@ -82,26 +82,27 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
             return 0
         else:
             return np.nan
+            
     pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, active_threshold, inactive_threshold))
     print("Drop {} molecules outside thresholds".format(pdata['activity'].isna().sum()))
     pdata = pdata.dropna(subset = ['activity'])
-    
-    pdata['activity'] = pdata['activity'].astype(int)
-    pdata['label'] = pdata['accession'] + "-" + pdata['activity'].astype(str).replace({"1" : "Active", "0" : "Inactive"})
 
-    pdata['count'] = pdata.groupby('label', as_index = False)['accession'].transform("count")
+    pdata['activity'] = pdata['activity'].astype(int)
+    pdata['label'] = pdata['accession'] + "-" + pdata['activity'].apply(lambda x: "Active" if x == 1 else "Inactive")
+
+    pdata['count'] = pdata.groupby('label')['accession'].transform('count')
     pdata = pdata.loc[pdata['count'] >= min_count]
     pdata = pdata.drop("count", axis = 1)
 
-    encoded_labels = pdata['activity'].unique().values
+    encoded_labels = pdata['activity'].unique()
     decoded_labels = np.array(["Inactive", "Active"])
 
     if multiclass:
         le = LabelEncoder()
         pdata['activity'] = le.fit_transform(pdata['label'].values)
-        encoded_labels = pdata['activity'].unique().values
+        encoded_labels = pdata['activity'].unique()
         decoded_labels = le.inverse_transform(encoded_labels)
-    
+
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein', 'label']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
@@ -110,6 +111,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
 
     return pdata, protein_data, {"encoded_labels" : encoded_labels, "decoded_labels" : decoded_labels}
 
+    
     
     
     
