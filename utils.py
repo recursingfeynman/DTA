@@ -39,7 +39,7 @@ class ClassificationLearner(object):
             self.log_config.log = [self.log_config.log]
 
         for l in self.log_config.log:
-            panel = f"{phase}/{log}"
+            panel = f"{phase}/{l}"
 
             if l == 'auroc':
                 score = metrics[l](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
@@ -204,7 +204,7 @@ class RegressionLearner(object):
             self.log_config.log = [self.log_config.log]
 
         for l in self.log_config.log:
-            panel = f"{phase}/{log}"
+            panel = f"{phase}/{l}"
             
             if l == 'rmse':
                 score = metrics[l](labels, logits, squared = False)
