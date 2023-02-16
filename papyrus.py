@@ -89,12 +89,18 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     pdata['activity'] = pdata['activity'].astype(int)
     pdata['label'] = pdata['accession'] + "-" + data['activity'].astype(str).replace({"1" : "Active", "0" : "Inactive"})
 
+    pdata['count'] = pdata.groupby('label', as_index = False)['accession'].transform("count")
+    pdata = pdata.loc[pdata['count'] >= min_count]
+    pdata = pdata.drop("count", axis = 1)
+
+    encoded_labels = pdata['activity'].unique().values
+    decoded_labels = np.array(["Inactive", "Active"])
+
     if multiclass:
         le = LabelEncoder()
-        pdata['count'] = pdata.groupby('label', as_index = False)['accession'].transform("count")
-        pdata = pdata.loc[pdata['count'] >= min_count]
-        pdata = pdata.drop("count", axis = 1)
         pdata['activity'] = le.fit_transform(pdata['label'].values)
+        encoded_labels = pdata['activity'].unique().values
+        decoded_labels = le.inverse_transform(encoded_labels)
     
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein', 'label']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
@@ -102,7 +108,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     pdata.to_csv("data/papyrus/raw/data.csv", index = False)
     print("Saved as data/papyrus/raw/data.csv")
 
-    return pdata, protein_data
+    return pdata, protein_data, {"encoded_labels" : encoded_labels, "decoded_labels" : decoded_labels}
 
     
     
