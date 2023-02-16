@@ -56,7 +56,7 @@ def get_data(vocab, activity_threshold = 6.25):
     return pdata, protein_data
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
-def get_specific_class(class_names, active_threshold, inactive_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10, scale_affinity = False):
+def get_specific_class(class_names, active_threshold, inactive_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10):
 
     download_papyrus(version=version, structures=False, descriptors = None)
 
@@ -104,9 +104,6 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
         decoded_labels = le.inverse_transform(encoded_labels)
 
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein', 'label']].reset_index(drop = True)
-    
-    if scale_affinity:
-        pdata['affinity'] = (pdata['affinity'] - pdata['affinity'].mean()) / np.sqrt(pdata['affinity'].var())
     
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
