@@ -21,6 +21,10 @@ chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)
 Datasets are from https://github.com/masashitsubaki/CPI_prediction
 '''
 
+def min_max_scale(x, xmin, xmax):
+    x = (x - xmin) / (xmax + xmin)
+    return x
+
 def data_split_train_val_test(data_root='data', data_set='human'):
 
     data_path = osp.join(data_root, data_set, 'raw', 'data.csv')
@@ -38,10 +42,19 @@ def data_split_train_val_test(data_root='data', data_set='human'):
 
     df_train, df_val = train_test_split(data_df, stratify = data_df['activity'], test_size = 0.4)
     df_val, df_test = train_test_split(df_val, stratify = df_val['activity'], test_size = 0.5)
+    
+    xmin = df_train['affinity'].min()
+    xmax = df_train['affinity'].max()
+
+    df_train['affinity'] = min_max_scale(df_train['affinity'], xmin, xmax)
+    df_val['affinity'] = min_max_scale(df_val['affinity'], xmin, xmax)
+    df_test['affinity'] = min_max_scale(df_test['affinity'], xmin, xmax)
 
     df_train.to_csv(osp.join(data_root, data_set, 'raw', 'data_train.csv'), index=False)
     df_val.to_csv(osp.join(data_root, data_set, 'raw', 'data_val.csv'), index=False)
     df_test.to_csv(osp.join(data_root, data_set, 'raw', 'data_test.csv'), index=False)
+
+    df_train.describe().to_csv(osp.join(data_root, data_set, 'raw', 'statistics.csv'). index = False)
 
     print(f"{data_set} split done!")
     print("Number of data: ", len(data_df))
