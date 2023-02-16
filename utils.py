@@ -171,6 +171,8 @@ class ClassificationLearner(object):
 
         for l in compute:
             if l.lower() == 'auroc':
+                if self.log_config.multi_class == 'raise':
+                    probs = probs[:, 1]
                 score = metrics["AUROC"](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
             else:
                 score = metrics[l](labels, preds, average = self.log_config.average, zero_division = 0)
