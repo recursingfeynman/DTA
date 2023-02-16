@@ -36,7 +36,7 @@ def data_split_train_val_test(data_root='data', data_set='human'):
     # df_val = df_val_test[:val_split_idx]
     # df_test = df_val_test[val_split_idx:]
 
-    df_train, df_val = train_test_split(data_df, stratify = data['activity'], test_size = 0.4)
+    df_train, df_val = train_test_split(data_df, stratify = data_df['activity'], test_size = 0.4)
     df_val, df_test = train_test_split(data_train, stratify = df_train['activity'], test_size = 0.5)
 
     df_train.to_csv(osp.join(data_root, data_set, 'raw', 'data_train.csv'), index=False)
