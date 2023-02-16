@@ -83,6 +83,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
         else:
             return np.nan
     pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, active_threshold, inactive_threshold))
+    print("Drop {} molecules outside thresholds".format(pdata['activity'].isna().sum()))
     pdata = pdata.dropna(subset = ['activity'])
     
     pdata['activity'] = pdata['activity'].astype(int)
