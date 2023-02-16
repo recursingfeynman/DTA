@@ -91,7 +91,7 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
         le = LabelEncoder()
         pdata['activity'] = pdata['accession'] + "-" + pdata['activity'].astype(str)
         pdata['count'] = pdata.groupby('activity', as_index = False)['accession'].transform("count")
-        pdata = pdata.loc[pdata['count'] > 1]
+        pdata = pdata.loc[pdata['count'] > 3]
         pdata = pdata.drop("count", axis = 1)
         pdata['activity'] = le.fit_transform(pdata['activity'].values)
     
