@@ -208,19 +208,30 @@ class MGraphDTA(nn.Module):
         super().__init__()
         self.protein_encoder = TargetRepresentation(block_num, vocab_protein_size, embedding_size)
         self.ligand_encoder = GraphDenseNet(num_input_features=87, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
-    
+        
+        self.protein = protein
+        self.ligand = ligand
+
         self.classifier = classifier
 
     def forward(self, data):
-        # target = data.target
-        # protein_x = self.protein_encoder(target)
-        ligand_x = self.ligand_encoder(data)
-
-        # x = torch.cat([protein_x, ligand_x], dim=-1)
+        target = data.target
         
-        if self.classifier is not None:
-            x = self.classifier(ligand_x)
+        if self.protein:
+            protein_x = self.protein_encoder(target)
+        
+        if self.ligand:
+            ligand_x = self.ligand_encoder(data)
 
-        return x
+        if self.protein and self.ligand:
+            embedding = torch.cat([protein_x, ligand_x], dim=-1)
+        else:
+            embedding = ligand_x
+        
+        if self.classifier:
+            output = self.classifier(embedding)
+            return output
+        else:
+            return embedding
 
 
