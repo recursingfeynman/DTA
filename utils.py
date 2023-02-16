@@ -188,7 +188,7 @@ class ClassificationLearner(object):
 
 
 class RegressionLearner(object):
-    def __init__(self, model, optimizer, criterion, lr_scheduler, dls_train, dls_valid, log_config, device, mode):
+    def __init__(self, model, optimizer, criterion, lr_scheduler, dls_train, dls_valid, log_config, device): 
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -233,7 +233,7 @@ class RegressionLearner(object):
             
             batch_x, batch_y = batch.to(self.device), batch.affinity.to(self.device)
             
-            output = self.model.forward(batch_x)
+            output = self.model.forward(batch_x).flatten()
             running_loss = self.criterion(output, batch_y)
             
             running_loss.backward()
@@ -260,7 +260,7 @@ class RegressionLearner(object):
             batch_y = batch.affinity.cpu()
             
             with torch.no_grad():
-                output = self.model.forward(batch_x).cpu()
+                output = self.model.forward(batch_x).flatten().cpu()
                 running_loss = self.criterion(output, batch_y)
                 loss += running_loss.item()
 
@@ -297,7 +297,7 @@ class RegressionLearner(object):
             batch_x = batch.to(self.device)
             batch_y = batch.affinity.cpu()
             with torch.no_grad():
-                output = self.model.forward(batch_x).cpu()
+                output = self.model.forward(batch_x).flatten().cpu()
                 loss.append(self.criterion(output, batch_y).item())
                 logits.append(output)
                 labels.append(batch_y.numpy())
