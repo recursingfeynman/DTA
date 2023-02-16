@@ -204,7 +204,7 @@ class GraphDenseNet(nn.Module):
         return x
 
 class MGraphDTA(nn.Module):
-    def __init__(self, block_num, vocab_protein_size, embedding_size=128, filter_num=32, out_dim=2, classifier = None):
+    def __init__(self, block_num, vocab_protein_size, embedding_size=128, filter_num=32, out_dim=2, classifier = None, protein = True, ligand = True):
         super().__init__()
         self.protein_encoder = TargetRepresentation(block_num, vocab_protein_size, embedding_size)
         self.ligand_encoder = GraphDenseNet(num_input_features=87, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
