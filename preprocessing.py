@@ -13,6 +13,7 @@ from rdkit import Chem
 from rdkit.Chem import ChemicalFeatures
 from rdkit import RDConfig
 from tqdm import tqdm
+from sklearn.model_selection import train_test_split
 fdef_name = osp.join(RDConfig.RDDataDir, 'BaseFeatures.fdef')
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)
 
@@ -27,13 +28,16 @@ def data_split_train_val_test(data_root='data', data_set='human'):
 
     # Split data in train:val:test = 8:1:1 with the same random seed as previous study.
     # Please see https://github.com/masashitsubaki/CPI_prediction
-    data_shuffle = data_df.sample(frac=1.)
-    train_split_idx = int(len(data_shuffle) * 0.7)
-    df_train = data_shuffle[:train_split_idx]
-    df_val_test = data_shuffle[train_split_idx:]
-    val_split_idx = int(len(df_val_test) * 0.5)
-    df_val = df_val_test[:val_split_idx]
-    df_test = df_val_test[val_split_idx:]
+    # data_shuffle = data_df.sample(frac=1.)
+    # train_split_idx = int(len(data_shuffle) * 0.7)
+    # df_train = data_shuffle[:train_split_idx]
+    # df_val_test = data_shuffle[train_split_idx:]
+    # val_split_idx = int(len(df_val_test) * 0.5)
+    # df_val = df_val_test[:val_split_idx]
+    # df_test = df_val_test[val_split_idx:]
+
+    df_train, df_val = train_test_split(data_df, stratify = data['activity'], test_size = 0.4)
+    df_val, df_test = train_test_split(data_train, stratify = df_train['activity'], test_size = 0.5)
 
     df_train.to_csv(osp.join(data_root, data_set, 'raw', 'data_train.csv'), index=False)
     df_val.to_csv(osp.join(data_root, data_set, 'raw', 'data_val.csv'), index=False)
