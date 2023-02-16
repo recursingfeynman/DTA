@@ -87,13 +87,12 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
     
     pdata['activity'] = pdata['activity'].astype(int)
 
-    pdata['count'] = pdata.groupby('activity', as_index = False)['accession'].transform("count")
-    pdata = pdata.loc[pdata['count'] > 1]
-    pdata = pdata.drop("count", axis = 1)
-
     if multiclass:
         le = LabelEncoder()
         pdata['activity'] = pdata['accession'] + "-" + pdata['activity'].astype(str)
+        pdata['count'] = pdata.groupby('activity', as_index = False)['accession'].transform("count")
+        pdata = pdata.loc[pdata['count'] > 1]
+        pdata = pdata.drop("count", axis = 1)
         pdata['activity'] = le.fit_transform(pdata['activity'].values)
     
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
