@@ -87,7 +87,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     pdata = pdata.dropna(subset = ['activity'])
     
     pdata['activity'] = pdata['activity'].astype(int)
-    pdata['label'] = pdata['accession'] + "-" + data['activity'].astype(str).replace({"1" : "Active", "0" : "Inactive"})
+    pdata['label'] = pdata['accession'] + "-" + pdata['activity'].astype(str).replace({"1" : "Active", "0" : "Inactive"})
 
     pdata['count'] = pdata.groupby('label', as_index = False)['accession'].transform("count")
     pdata = pdata.loc[pdata['count'] >= min_count]
