@@ -56,7 +56,7 @@ def get_data(vocab, activity_threshold = 6.25):
     return pdata, protein_data
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
-def get_specific_class(class_names, act_threshold, inact_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10):
+def get_specific_class(class_names, active_threshold, inactive_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10):
 
     download_papyrus(version=version, structures=False, descriptors = None)
 
@@ -75,27 +75,27 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
             if accession in pid:
                 pdata.loc[pdata['accession'] == accession, 'sequence'] = protein_data.iloc[idx]['Sequence']
 
-    def encode(x, act_threshold, inact_threshold):
-        if x >= act_threshold:
+    def encode(x, active_threshold, inactive_threshold):
+        if x >= active_threshold:
             return 1
-        elif x <= inact_threshold:
+        elif x <= inactive_threshold:
             return 0
         else:
             return np.nan
-    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, act_threshold, inact_threshold))
+    pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, active_threshold, inactive_threshold))
     pdata = pdata.dropna(subset = ['activity'])
     
     pdata['activity'] = pdata['activity'].astype(int)
 
     if multiclass:
         le = LabelEncoder()
-        pdata['activity'] = pdata['accession'] + "-" + pdata['activity'].astype(str)
-        pdata['count'] = pdata.groupby('activity', as_index = False)['accession'].transform("count")
+        pdata['label'] = pdata['accession'] + "-" + pdata['activity'].astype(str)
+        pdata['count'] = pdata.groupby('label', as_index = False)['accession'].transform("count")
         pdata = pdata.loc[pdata['count'] >= min_count]
         pdata = pdata.drop("count", axis = 1)
-        pdata['activity'] = le.fit_transform(pdata['activity'].values)
+        pdata['activity'] = le.fit_transform(pdata['label'].values)
     
-    pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
+    pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein', 'label']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
     pdata.to_csv("data/papyrus/raw/data.csv", index = False)
