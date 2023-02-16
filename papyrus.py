@@ -53,6 +53,8 @@ def get_data(vocab, activity_threshold = 6.25):
     pdata.to_csv("data/papurys/raw/data.csv", index = False)
     print("Saved as data/raw/data.csv")
 
+    return pdata, protein_data
+
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
 def get_specific_class(class_names, act_threshold, inact_threshold, version = "latest", drop_duplicates = False, multiclass = False):
 
@@ -87,16 +89,19 @@ def get_specific_class(class_names, act_threshold, inact_threshold, version = "l
         pdata['activity'] = pdata['accession'] + "-" + pdata['activity'].astype(str)
         pdata['activity'] = le.fit_transform(pdata['activity'].values)
     
-    pdata['count'] = pdata.groupby('accession', as_index = False)['activity'].transform("count")
+    pdata['activity'] = pdata['activity'].astype(int)
+
+    pdata['count'] = pdata.groupby('activity', as_index = False)['accession'].transform("count")
     pdata = pdata.loc[pdata['count'] > 1]
     pdata = pdata.drop("count", axis = 1)
 
-    pdata['activity'] = pdata['activity'].astype(int)
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein']].reset_index(drop = True)
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
     pdata.to_csv("data/papyrus/raw/data.csv", index = False)
     print("Saved as data/papyrus/raw/data.csv")
+
+    return pdata, protein_data
 
     
     
