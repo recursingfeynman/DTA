@@ -1,2 +1,2 @@
 # DTA
-# DTA
+### Drug target interactions project
