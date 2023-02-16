@@ -35,8 +35,8 @@ class ClassificationLearner(object):
         labels = outputs['labels']
         loss = outputs['loss']
 
-        if isinstance(log, str):
-            log = [log]
+        if isinstance(self.log_config.log, str):
+            self.log_config.log = [self.log_config.log]
 
         for l in self.log_config.log:
             panel = f"{phase}/{log}"
@@ -200,16 +200,16 @@ class RegressionLearner(object):
         labels = outputs['labels']
         loss = outputs['loss']
 
-        if isinstance(log, str):
-            log = [log]
+        if isinstance(self.log_config.log, str):
+            self.log_config.log = [self.log_config.log]
 
-        for l in self.log_comfig.log:
+        for l in self.log_config.log:
             panel = f"{phase}/{log}"
             
             if l == 'rmse':
                 score = metrics[l](labels, logits, squared = False)
             else:
-                score = l(labels, logits)
+                score = metrics[l](labels, logits)
             
             wandb.log({panel : score})
             
