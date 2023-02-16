@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 class ClassificationLearner(object):
-    def __init__(self, model, optimizer, criterion, lr_scheduler, dls_train, dls_valid, log_config, device, mode):
+    def __init__(self, model, optimizer, criterion, lr_scheduler, dls_train, dls_valid, log_config, device):
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
@@ -99,7 +99,7 @@ class ClassificationLearner(object):
                 running_loss = self.criterion(output, batch_y)
                 loss += running_loss.item()
                 running_acc = (output.argmax(dim = 1) == batch_y).sum()
-                accuracy += running_acc
+                accuracy += running_acc.item()
 
                 probs = output.softmax(dim = 1).cpu().numpy()
                 preds = output.argmax(dim = 1).cpu().numpy().reshape(-1)
