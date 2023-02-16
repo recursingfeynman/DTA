@@ -56,7 +56,7 @@ def get_data(vocab, activity_threshold = 6.25):
     return pdata, protein_data
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
-def get_specific_class(class_names, act_threshold, inact_threshold, version = "latest", drop_duplicates = False, multiclass = False):
+def get_specific_class(class_names, act_threshold, inact_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10):
 
     download_papyrus(version=version, structures=False, descriptors = None)
 
