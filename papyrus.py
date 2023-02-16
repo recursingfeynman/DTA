@@ -56,7 +56,7 @@ def get_data(vocab, activity_threshold = 6.25):
     return pdata, protein_data
 
 # class_names = {'l3': 'SLC superfamily of solute carriers'}
-def get_specific_class(class_names, active_threshold, inactive_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10):
+def get_specific_class(class_names, active_threshold, inactive_threshold, version = "latest", drop_duplicates = False, multiclass = False, min_count = 10, scale_affinity = False):
 
     download_papyrus(version=version, structures=False, descriptors = None)
 
@@ -82,7 +82,7 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
             return 0
         else:
             return np.nan
-            
+
     pdata['activity'] = pdata['pchembl_value_Mean'].apply(lambda x: encode(x, active_threshold, inactive_threshold))
     print("Drop {} molecules outside thresholds".format(pdata['activity'].isna().sum()))
     pdata = pdata.dropna(subset = ['activity'])
@@ -94,16 +94,20 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     pdata = pdata.loc[pdata['count'] >= min_count]
     pdata = pdata.drop("count", axis = 1)
 
-    encoded_labels = pdata['activity'].unique()
+    encoded_labels = sorted(pdata['activity'].unique())
     decoded_labels = np.array(["Inactive", "Active"])
 
     if multiclass:
         le = LabelEncoder()
         pdata['activity'] = le.fit_transform(pdata['label'].values)
-        encoded_labels = pdata['activity'].unique()
+        encoded_labels = sorted(pdata['activity'].unique())
         decoded_labels = le.inverse_transform(encoded_labels)
 
     pdata = pdata.rename(columns = {"SMILES" : 'smiles', "pchembl_value_Mean" : "affinity", "accession" : "protein"})[['smiles', 'sequence', 'activity', 'affinity', 'protein', 'label']].reset_index(drop = True)
+    
+    if scale_affinity:
+        pdata['affinity'] = (pdata['affinity'] - pdata['affinity'].mean()) / np.sqrt(pdata['affinity'].var())
+    
     print("Molecules: {} \tFeatures ({}): {}".format(*pdata.shape, list(pdata.columns)))
     os.makedirs("./data/papyrus/raw/", exist_ok = True)
     pdata.to_csv("data/papyrus/raw/data.csv", index = False)
