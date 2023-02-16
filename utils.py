@@ -219,6 +219,9 @@ class RegressionLearner(object):
             
             if l == 'rmse':
                 score = metrics[l](labels, logits, squared = False)
+            elif l == 'loss':
+                wandb.log({panel : loss})
+                continue
             else:
                 score = metrics[l](labels, logits)
             
@@ -286,7 +289,7 @@ class RegressionLearner(object):
         else:
             wandb.log({"validation/loss" : loss})
 
-    def predict(self, dls_test, compute):
+    def predict(self, dls_test, compute_metrics):
         self.model.eval()
 
         loss = []
@@ -315,10 +318,10 @@ class RegressionLearner(object):
         print("Evaluation report: ")
         print("{:<15s} : {:.4f} ± {:.2f}".format("Loss", np.mean(loss), np.std(loss)))
 
-        if isinstance(compute, str):
-            compute = [compute]
+        if isinstance(compute_metrics, str):
+            compute_metrics = [compute_metrics]
 
-        for l in compute:
+        for l in compute_metrics:
             if l.lower == "rmse":
                 score = metrics[l](labels, logits, squared = False)
             else:
