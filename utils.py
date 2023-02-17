@@ -429,7 +429,6 @@ class TripletLearner(object):
         }
 
         preds = outputs['preds']
-        probs = outputs['probs']
         labels = outputs['labels']
         loss = outputs['loss']
 
@@ -440,9 +439,7 @@ class TripletLearner(object):
             panel = f"{phase}/{l}"
 
             if l == 'auroc':
-                if self.log_config.multi_class == 'raise':
-                    probs = probs[:, 1]
-                score = metrics[l](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
+                continue
             elif l == 'loss':
                 wandb.log({panel : loss})
                 continue
