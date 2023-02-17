@@ -235,7 +235,7 @@ class GNNDataset(InMemoryDataset):
         data, slices = self.collate(test_list)
         torch.save((data, slices), self.processed_paths[2])
 
-def preprocess(data_root = 'data', data_set = 'papyrus', split = 'stratified', sizes = [0.6, 0.2, 0.2])
+def preprocess(data_root = 'data', data_set = 'papyrus', split = 'stratified', sizes = [0.6, 0.2, 0.2]):
     data_split_train_val_test(data_root=data_root, data_set=data_set, split=split)
     GNNDataset(root = osp.join(data_root, data_set))
     print("Preprocessed.")
