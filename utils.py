@@ -345,8 +345,8 @@ def compute_embeddings(model, loader, device):
     labels = []
 
     for batch in tqdm(loader, desc = 'Embeddings calculation'):
-        batch_x = batch['image'].to(device)
-        batch_y = batch['label'].to(device)
+        batch_x = batch.to(device)
+        batch_y = batch.activity.to(device)
     with torch.no_grad():
         output = model.forward(batch_x)
         embeddings.append(output)
