@@ -508,14 +508,13 @@ class TripletLearner(object):
         loss /= len(self.dls_valid)
 
         embeddings = torch.cat(embeddings, dim = 0)
-        labels = np.concatenate(labels)
+        labels = torch.cat(labels, dim = 0)
         predictions = predict_class(embeddings, self.reference_emb, self.reference_class)
-        accuracy = (predictions == labels).sum()
-        accuracy = accuracy.item() / len(self.dls_valid.dataset)
+        accuracy = (predictions == labels).sum().item() / len(self.dls_valid.dataset)
         
         outputs = {
-            'preds' : predictions,
-            'labels' : labels,
+            'preds' : predictions.numpy(),
+            'labels' : labels.numpy(),
             'loss' : loss
         }
 
