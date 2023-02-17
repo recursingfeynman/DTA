@@ -344,9 +344,11 @@ def compute_embeddings(model, loader, device):
     embeddings = []
     labels = []
 
-    for batch in tqdm(loader, desc = 'Embeddings calculation'):
+    for batch in loader:
         batch_x = batch.to(device)
         batch_y = batch.activity.to(device)
+        # batch_x, batch_y = batch[0].to(device), batch[1].to(device)
+
         with torch.no_grad():
             output = model.forward(batch_x)
             embeddings.append(output)
@@ -463,7 +465,7 @@ class TripletLearner(object):
             self.optimizer.zero_grad()
             
             batch_x, batch_y = batch.to(self.device), batch.activity.to(self.device)
-            
+            # batch_x, batch_y = batch[0].to(self.device), batch[1].to(self.device)
             embeddings = self.model.forward(batch_x)
             running_loss = self.criterion(embeddings, batch_y)
             
@@ -481,9 +483,12 @@ class TripletLearner(object):
         
         loss /= len(self.dls_train)
         accuracy /= len(self.dls_train.dataset)
-        
-        wandb.log({"train/loss" : loss})
-        wandb.log({"train/accuracy" : accuracy})
+        if self.log_config is not None:
+            wandb.log({"train/loss" : loss})
+            wandb.log({"train/accuracy" : accuracy})
+            return loss, accuracy
+        else:
+            return loss, accuracy
 
     def _evaluate(self):
         self.model.eval()
@@ -495,12 +500,13 @@ class TripletLearner(object):
         for idx, batch in enumerate(self.dls_valid):
             batch_x = batch.to(self.device)
             batch_y = batch.activity.cpu()
+            # batch_x, batch_y = batch[0].to(self.device), batch[1].to(self.device)
             
             with torch.no_grad():
                 emb = self.model.forward(batch_x).cpu()
                 running_loss = self.criterion(emb, batch_y)
                 loss += running_loss.item()
-                batch_y = batch_y.flatten().numpy()
+                batch_y = batch_y.flatten()
                 embeddings.append(emb)
                 labels.append(batch_y)
                 
@@ -520,11 +526,11 @@ class TripletLearner(object):
 
         if self.log_config is not None:
             self.logger(outputs, phase = "validation")
+            return loss, accuracy
         else:
-            wandb.log({"validation/loss" : loss})
-            wandb.log({"validation/accuracy" : accuracy})
+            return loss, accuracy
 
-    def predict(self, dls_test, compute):
+    def predict(self, dls_test, compute, multi_class = True, average = "macro"):
         self.model.eval()
 
         loss = []
@@ -537,12 +543,11 @@ class TripletLearner(object):
             with torch.no_grad():
                 emb = self.model.forward(batch_x).cpu()
                 loss.append(self.criterion(emb, batch_y).item())
-                labels.append(batch_y.flatten().numpy())
+                labels.append(batch_y.flatten())
                 embeddings.append(emb)
 
         labels = torch.cat(labels, dim = 0).numpy()
         embeddings = torch.cat(embeddings, dim = 0)
-
         predictions = predict_class(embeddings, self.reference_emb, self.reference_class).numpy()
 
         metrics = dict()
@@ -560,11 +565,13 @@ class TripletLearner(object):
 
         for l in compute:
             if l.lower() == 'auroc':
-                if self.log_config.multi_class == 'raise':
+                if not multi_class:
                     probs = probs[:, 1]
-                score = metrics["AUROC"](labels, probs, multi_class = self.log_config.multi_class, average = self.log_config.average)
+                    score = metrics["AUROC"](labels, probs, average = average)
+                else:
+                    score = metrics["AUROC"](labels, probs, multi_class = "ovo", average = average)
             else:
-                score = metrics[l](labels, predictions, average = self.log_config.average, zero_division = 0)
+                score = metrics[l](labels, predictions, average = average, zero_division = 0)
 
             print("{:<15s} : {:.4f}".format(l, score))
 
@@ -572,6 +579,9 @@ class TripletLearner(object):
                 
     def train(self, n_epochs):    
         for epoch in tqdm(range(n_epochs)):
-            self._fit()
-            self._evaluate()
+            tr_loss, tr_acc = self._fit()
+            val_loss, val_acc = self._evaluate()
+
+            if self.log_config is None:
+                print("Epoch [{}]   Train: loss {} accuracy {}   Validation: loss {} accuracy {}".format(epoch, tr_loss, tr_acc, val_loss, val_acc))
 
