@@ -62,7 +62,7 @@ class TargetRepresentation(nn.Module):
     def __init__(self, block_num, vocab_size, embedding_num):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embedding_num, padding_idx=0)
-        self.normalization = nn.BatchNorm1d(embedding_num, affine = False)
+        self.normalization = nn.BatchNorm1d(embedding_num)
         self.block_list = nn.ModuleList()
         for block_idx in range(block_num):
             self.block_list.append(
@@ -204,10 +204,10 @@ class GraphDenseNet(nn.Module):
         return x
 
 class MGraphDTA(nn.Module):
-    def __init__(self, block_num, vocab_protein_size, embedding_size=128, filter_num=32, out_dim=2, classifier = None, protein = True, ligand = True):
+    def __init__(self, block_num, vocab_protein_size, num_input_features, embedding_size=128, filter_num=32, classifier = None, protein = True, ligand = True):
         super().__init__()
         self.protein_encoder = TargetRepresentation(block_num, vocab_protein_size, embedding_size)
-        self.ligand_encoder = GraphDenseNet(num_input_features=87, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
+        self.ligand_encoder = GraphDenseNet(num_input_features=num_input_features, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
         
         self.protein = protein
         self.ligand = ligand
