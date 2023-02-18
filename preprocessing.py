@@ -224,7 +224,7 @@ class RegressionPreprocessor(InMemoryDataset):
         # save preprocessed train data:
         torch.save((data, slices), self.processed_paths[0])
 
-        data, slices = self.collate(test_list)
+        data, slices = self.collate(val_list)
         # save preprocessed val data:
         torch.save((data, slices), self.processed_paths[1])
         
