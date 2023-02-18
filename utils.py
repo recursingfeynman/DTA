@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import wandb
 from tqdm import tqdm
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 
 
@@ -204,7 +204,8 @@ class RegressionLearner(object):
 
         metrics = {
             'mse' : mean_squared_error,
-            'mae' : mean_absolute_error
+            'mae' : mean_absolute_error,
+            'r2' : r2_score
         }
 
         logits = outputs['logits']
@@ -314,9 +315,10 @@ class RegressionLearner(object):
         metrics['mse'] = mean_squared_error
         metrics['rmse'] = mean_squared_error
         metrics['mae'] = mean_absolute_error
+        metrics['r2'] = r2_score
 
         print("Evaluation report: ")
-        print("{:<15s} : {:.4f} ± {:.2f}".format("loss", np.mean(loss), np.std(loss)))
+        print("{:<15s} : {:.4f} ± {:.2f}".format("Loss", np.mean(loss), np.std(loss)))
 
         if isinstance(compute_metrics, str):
             compute_metrics = [compute_metrics]
@@ -327,9 +329,9 @@ class RegressionLearner(object):
             else:
                 score = metrics[l](labels, logits)
 
-            print("{:<15s} : {:.4f}".format(l, score))         
+            print("{:<10s} : {:.4f}".format(l.upper(), score))         
 
-        return {"labels" : labels, "logits" : logits}
+        return labels, logits
                 
     def train(self, n_epochs):    
         for epoch in tqdm(range(n_epochs)):
@@ -583,5 +585,5 @@ class TripletLearner(object):
             val_loss, val_acc = self._evaluate()
 
             if self.log_config is None:
-                print("Epoch [{}]   Train: loss {} accuracy {}   Validation: loss {} accuracy {}".format(epoch, tr_loss, tr_acc, val_loss, val_acc))
+                print("Epoch [{}]   Train: loss {:.4f} accuracy {:.4f}   Validation: loss {:.4f} accuracy {:.4f}".format(epoch, tr_loss, tr_acc, val_loss, val_acc))
 
