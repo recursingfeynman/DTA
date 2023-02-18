@@ -31,7 +31,7 @@ def min_max_scale(x, xmin, xmax):
     x = (x - xmin) / (xmax + xmin)
     return x
 
-def data_split_train_val_test(path, split, sizes):
+def data_split_train_val_test(path, split, sizes, scale):
 
     data_path = osp.join(path, 'raw', 'data.csv')
     data_df = pd.read_csv(data_path)
@@ -50,11 +50,12 @@ def data_split_train_val_test(path, split, sizes):
     xmax = df_train['affinity'].max()
 
     df_train.describe().to_csv(osp.join(path, 'raw', 'metadata.csv'))
-
-    df_train['affinity'] = min_max_scale(df_train['affinity'], xmin, xmax)
-    df_val['affinity'] = min_max_scale(df_val['affinity'], xmin, xmax)
-    df_test['affinity'] = min_max_scale(df_test['affinity'], xmin, xmax)
-
+    
+    if scale:
+        df_train['affinity'] = df_train['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))
+        df_val['affinity'] = df_val['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))    
+        df_test['affinity'] = df_test['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))
+    
     df_train.to_csv(osp.join(path, 'raw', 'data_train.csv'), index=False)
     df_val.to_csv(osp.join(path, 'raw', 'data_val.csv'), index=False)
     df_test.to_csv(osp.join(path, 'raw', 'data_test.csv'), index=False)
@@ -439,8 +440,8 @@ class ClassificationPreprocessor(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[2])
 
 
-def preprocess(path, task, split = 'stratified', sizes = [0.6, 0.2, 0.2]):
-    data_split_train_val_test(path, split=split, sizes = sizes)
+def preprocess(path, task, split = 'stratified', sizes = [0.6, 0.2, 0.2], scale = True):
+    data_split_train_val_test(path, split, sizes, scale)
     if task == 'regression':
         RegressionPreprocessor(path)
     elif task == 'classification':
