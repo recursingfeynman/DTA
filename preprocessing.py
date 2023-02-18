@@ -49,6 +49,8 @@ def data_split_train_val_test(path, split, sizes):
     xmin = df_train['affinity'].min()
     xmax = df_train['affinity'].max()
 
+    df_train.describe().to_csv(osp.join(path, 'raw', 'metadata.csv'))
+
     df_train['affinity'] = min_max_scale(df_train['affinity'], xmin, xmax)
     df_val['affinity'] = min_max_scale(df_val['affinity'], xmin, xmax)
     df_test['affinity'] = min_max_scale(df_test['affinity'], xmin, xmax)
@@ -57,7 +59,7 @@ def data_split_train_val_test(path, split, sizes):
     df_val.to_csv(osp.join(path, 'raw', 'data_val.csv'), index=False)
     df_test.to_csv(osp.join(path, 'raw', 'data_test.csv'), index=False)
 
-    df_train.describe().to_csv(osp.join(path, 'raw', 'statistics.csv'), index = False)
+    
 
     print(f"{path} split done!")
     print("Number of data: ", len(data_df))
@@ -202,14 +204,17 @@ class RegressionPreprocessor(InMemoryDataset):
             graph_dict[smile] = g
 
         train_list = self.process_data(self.raw_paths[0], graph_dict)
-        test_list = self.process_data(self.raw_paths[1], graph_dict)
+        val_list = self.process_data(self.raw_paths[1], graph_dict)
+        test_list = self.process_data(self.raw_paths[2], graph_dict)
 
         if self.pre_filter is not None:
             train_list = [train for train in train_list if self.pre_filter(train)]
+            val_list = [val for val in val_list if self.pre_filter(val)]
             test_list = [test for test in test_list if self.pre_filter(test)]
 
         if self.pre_transform is not None:
             train_list = [self.pre_transform(train) for train in train_list]
+            val_list = [self.pre_transform(val) for val in val_list]
             test_list = [self.pre_transform(test) for test in test_list]
 
         print('Graph construction done. Saving to file.')
@@ -219,8 +224,12 @@ class RegressionPreprocessor(InMemoryDataset):
         torch.save((data, slices), self.processed_paths[0])
 
         data, slices = self.collate(test_list)
-        # save preprocessed test data:
+        # save preprocessed val data:
         torch.save((data, slices), self.processed_paths[1])
+        
+        data, slices = self.collate(test_list)
+        # save preprocessed test data:
+        torch.save((data, slices), self.processed_paths[2])
 
     def get_nodes(self, g):
         feat = []
@@ -321,7 +330,7 @@ class RegressionPreprocessor(InMemoryDataset):
         return node_attr, edge_index, edge_attr
 
 class ClassificationPreprocessor(InMemoryDataset):
-    def __init__(self, root, types, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, root, types = 'train', transform=None, pre_transform=None, pre_filter=None):
         super().__init__(root, transform, pre_transform, pre_filter)
         if types == 'train':
             self.data, self.slices = torch.load(self.processed_paths[0])
