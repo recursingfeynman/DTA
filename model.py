@@ -23,7 +23,6 @@ class Conv1dReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Conv1d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding),
-            nn.BatchNorm1d(out_channels),
             nn.ReLU()
         )
     
@@ -36,7 +35,6 @@ class LinearReLU(nn.Module):
         super().__init__()
         self.inc = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=out_features, bias=bias),
-            nn.BatchNorm1d(out_features),
             nn.ReLU()
         )
 
@@ -62,7 +60,6 @@ class TargetRepresentation(nn.Module):
     def __init__(self, block_num, vocab_size, embedding_num):
         super().__init__()
         self.embed = nn.Embedding(vocab_size, embedding_num, padding_idx=0)
-        self.normalization = nn.BatchNorm1d(embedding_num)
         self.block_list = nn.ModuleList()
         for block_idx in range(block_num):
             self.block_list.append(
@@ -73,7 +70,6 @@ class TargetRepresentation(nn.Module):
         
     def forward(self, x):
         x = self.embed(x).permute(0, 2, 1)
-        x = self.normalization(x)
         feats = [block(x) for block in self.block_list]
         x = torch.cat(feats, -1)
         x = self.linear(x)
@@ -129,8 +125,8 @@ class GraphConvBn(nn.Module):
         self.norm = NodeLevelBatchNorm(out_channels)
 
     def forward(self, data):
-        x, edge_index, batch = data.node_feature, data.edge_index, data.batch
-        data.x = F.relu(self.norm(self.conv(x, edge_index)))
+        node_feature, edge_index, batch = data.node_feature, data.edge_index, data.batch
+        data.node_feature = F.relu(self.norm(self.conv(node_feature, edge_index)))
 
         return data
 
@@ -141,16 +137,16 @@ class DenseLayer(nn.Module):
         self.conv2 = GraphConvBn(int(growth_rate * bn_size), growth_rate)
 
     def bn_function(self, data):
-        concated_features = torch.cat(data.x, 1)
-        data.x = concated_features
+        concated_features = torch.cat(data.node_feature, 1)
+        data.node_feature = concated_features
 
         data = self.conv1(data)
 
         return data
     
     def forward(self, data):
-        if isinstance(data.x, Tensor):
-            data.x = [data.x]
+        if isinstance(data.node_feature, Tensor):
+            data.node_feature = [data.node_feature]
 
         data = self.bn_function(data)
         data = self.conv2(data)
@@ -166,13 +162,13 @@ class DenseBlock(nn.ModuleDict):
 
 
     def forward(self, data):
-        features = [data.x]
+        features = [data.node_feature]
         for name, layer in self.items():
             data = layer(data)
-            features.append(data.x)
-            data.x = features
+            features.append(data.node_feature)
+            data.node_feature = features
 
-        data.x = torch.cat(data.x, 1)
+        data.node_feature = torch.cat(data.node_feature, 1)
 
         return data
 
@@ -204,34 +200,28 @@ class GraphDenseNet(nn.Module):
         return x
 
 class MGraphDTA(nn.Module):
-    def __init__(self, block_num, vocab_protein_size, num_input_features, embedding_size=128, filter_num=32, classifier = None, protein = True, ligand = True):
+    def __init__(self, num_input_features, block_num, vocab_protein_size, embedding_size=128, filter_num=32, protein = True, head = None):
         super().__init__()
         self.protein_encoder = TargetRepresentation(block_num, vocab_protein_size, embedding_size)
         self.ligand_encoder = GraphDenseNet(num_input_features=num_input_features, out_dim=filter_num*3, block_config=[8, 8, 8], bn_sizes=[2, 2, 2])
-        
-        self.protein = protein
-        self.ligand = ligand
 
-        self.classifier = classifier
+        self.protein = protein
+        self.head = head
 
     def forward(self, data):
         sequence = data.sequence
-        
         if self.protein:
-            protein_x = self.protein_encoder(target)
-        
-        if self.ligand:
-            ligand_x = self.ligand_encoder(data)
+            protein_x = self.protein_encoder(sequence)
 
-        if self.protein and self.ligand:
-            embedding = torch.cat([protein_x, ligand_x], dim=-1)
-        else:
-            embedding = ligand_x
-        
-        if self.classifier:
-            output = self.classifier(embedding)
-            return output
-        else:
-            return embedding
+        ligand_x = self.ligand_encoder(data)
 
+        if self.protein:
+            x = torch.cat([protein_x, ligand_x], dim=-1)
+        else:
+            x = ligand_x
+        
+        if self.head is not None:
+            x = self.head(x)
+
+        return x
 
