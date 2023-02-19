@@ -10,9 +10,41 @@ from rdkit import RDConfig
 from tqdm import tqdm
 import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 fdef_name = os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef')
 chem_feature_factory = ChemicalFeatures.BuildFeatureFactory(fdef_name)
           
+
+def min_max_scale(x, xmin, xmax):
+    x = (x - xmin) / (xmax + xmin)
+    return x
+
+def split(path, split_strategy, sizes, scale):
+
+    data_path = os.path.join(path, 'raw', 'data.csv')
+    data_df = pd.read_csv(data_path)
+    
+    if split_strategy == 'stratified':
+        df_train, df_val = train_test_split(data_df, stratify = data_df['activity'], test_size = sizes[1] + sizes[2])
+        df_val, df_test = train_test_split(df_val, stratify = df_val['activity'], test_size = sizes[1] / (sizes[1] + sizes[2]))
+    else:
+        df_train, df_val = train_test_split(data_df, shuffle = True, test_size = sizes[1] + sizes[2])
+        df_val, df_test = train_test_split(df_val, shuffle = True, test_size = sizes[1] / (sizes[1] + sizes[2]))
+    
+    xmin = df_train['affinity'].min()
+    xmax = df_train['affinity'].max()
+
+    df_train.describe().to_csv(os.path.join(path, 'raw', 'metadata.csv'))
+    
+    if scale:
+        df_train['affinity'] = df_train['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))
+        df_val['affinity'] = df_val['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))    
+        df_test['affinity'] = df_test['affinity'].apply(lambda x: min_max_scale(x, xmin, xmax))
+    
+    df_train.to_csv(os.path.join(path, 'raw', 'data_train.csv'), index=False)
+    df_val.to_csv(os.path.join(path, 'raw', 'data_val.csv'), index=False)
+    df_test.to_csv(os.path.join(path, 'raw', 'data_test.csv'), index=False)
+
 
 PROTEIN = {
     "A": 1, "C": 2, "B": 3, "E": 4, "D": 5, "G": 6, 
@@ -352,7 +384,7 @@ class RegressionPreprocessor(InMemoryDataset):
                     node_feature=torch.FloatTensor(np.vstack(node_feature)),
                     edge_index=torch.LongTensor(edge_index),
                     edge_attr=torch.FloatTensor(edge_attr),
-                    sequence=torch.LongTensor(np.vstack([sequence)),
+                    sequence=torch.LongTensor(np.vstack([sequence])),
                     activity=torch.LongTensor([activity]),
                     affinity=torch.FloatTensor([affinity])
                 )
@@ -414,7 +446,10 @@ class RegressionPreprocessor(InMemoryDataset):
         data, slices = self.collate(test_list)
         torch.save((data, slices), self.processed_paths[2])       
 
-def prepare_data(path, task):
+def prepare_data(path, task, split_strategy = 'stratified', sizes = [0.6, 0.2, 0.2], scale = False):
+
+    split(path, split_strategy, sizes, scale)
+
     if task == 'classification':
         ClassificationPreprocessor(path)
     elif task == 'regression':
