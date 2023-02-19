@@ -129,7 +129,7 @@ class GraphConvBn(nn.Module):
         self.norm = NodeLevelBatchNorm(out_channels)
 
     def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+        x, edge_index, batch = data.node_feature, data.edge_index, data.batch
         data.x = F.relu(self.norm(self.conv(x, edge_index)))
 
         return data
@@ -198,7 +198,7 @@ class GraphDenseNet(nn.Module):
 
     def forward(self, data):
         data = self.features(data)
-        x = gnn.global_mean_pool(data.x, data.batch)
+        x = gnn.global_mean_pool(data.node_feature, data.batch)
         x = self.classifer(x)
 
         return x
@@ -215,7 +215,7 @@ class MGraphDTA(nn.Module):
         self.classifier = classifier
 
     def forward(self, data):
-        target = data.target
+        sequence = data.sequence
         
         if self.protein:
             protein_x = self.protein_encoder(target)
