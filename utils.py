@@ -241,9 +241,10 @@ class RegressionLearner(object):
             running_loss = self.criterion(output, batch_y)
             
             running_loss.backward()
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), clip_value=1.0)
             self.optimizer.step()
 
-            if self.lr_scheduler is not None:
+            if self.lr_scheduler is not None and 'OneCycleLR' in str(self.lr_scheduler.__class__):
                 self.lr_scheduler.step()
             
             loss += running_loss.item()
@@ -251,6 +252,9 @@ class RegressionLearner(object):
         loss /= len(self.dls_train)
         
         wandb.log({"train/loss" : loss})
+
+        if self.lr_scheduler is not None and 'OneCycleLR' not in str(self.lr_scheduler.__class__):
+            self.lr_scheduler.step()
 
     def _evaluate(self):
         self.model.eval()
