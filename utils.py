@@ -188,11 +188,12 @@ class ClassificationLearner(object):
 
 
 class RegressionLearner(object):
-    def __init__(self, model, optimizer, criterion, lr_scheduler, dls_train, dls_valid, log_config, device): 
+    def __init__(self, model, optimizer, criterion, lr_scheduler, step, dls_train, dls_valid, log_config, device): 
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.lr_scheduler = lr_scheduler
+        self.step = step
 
         self.dls_train = dls_train
         self.dls_valid = dls_valid
@@ -244,7 +245,7 @@ class RegressionLearner(object):
             torch.nn.utils.clip_grad_value_(self.model.parameters(), clip_value=1.0)
             self.optimizer.step()
 
-            if self.lr_scheduler is not None and 'OneCycleLR' in str(self.lr_scheduler.__class__):
+            if self.lr_scheduler is not None and self.step == 'per_batch':
                 self.lr_scheduler.step()
             
             loss += running_loss.item()
@@ -253,7 +254,7 @@ class RegressionLearner(object):
         
         wandb.log({"train/loss" : loss})
 
-        if self.lr_scheduler is not None and 'OneCycleLR' not in str(self.lr_scheduler.__class__):
+        if self.lr_scheduler is not None and self.step == 'per_epoch':
             self.lr_scheduler.step()
 
     def _evaluate(self):
