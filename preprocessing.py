@@ -414,18 +414,10 @@ class RegressionPreprocessor(InMemoryDataset):
         data, slices = self.collate(test_list)
         torch.save((data, slices), self.processed_paths[2])       
 
-import shutil
-
-
-
-if __name__ == '__main__':
-    try:
-        shutil.rmtree('data/papyrus/processed')
-    except:
-        pass
-    ClassificationPreprocessor('data/papyrus')
-    print(torch.load('data/papyrus/processed/processed_data_train.pt'))
-    shutil.rmtree('data/papyrus/processed')
-    RegressionPreprocessor('data/papyrus')
-    print(torch.load('data/papyrus/processed/processed_data_train.pt'))
-    shutil.rmtree('data/papyrus/processed')
+def prepare_data(path, task):
+    if task == 'classification':
+        ClassificationPreprocessor(path)
+    elif task == 'regression':
+        RegressionPreprocessor(path)
+    else:
+        raise ValueError("Task not supported. Available tasks: `classification`, `regression`.")
