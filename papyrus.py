@@ -63,8 +63,8 @@ def get_specific_class(class_names, active_threshold, inactive_threshold, versio
     sample_data = read_papyrus(is3d=False, chunksize = 100_000, source_path=None)
     protein_data = read_protein_set(source_path=None)
     
-    f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=class_names, njobs = 2)
-    f = keep_type(data=f, activity_types=['Ki', 'KD'], njobs = 2)
+    f = keep_protein_class(data=sample_data, protein_data=protein_data, classes=class_names)
+    f = keep_type(data=f, activity_types=['Ki', 'KD'])
     data = consume_chunks(f, total = 13, progress = True)
     pdata = data[['SMILES', 'accession', 'pchembl_value_Mean']]
     
