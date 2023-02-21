@@ -153,7 +153,7 @@ class MoleculeDataset(Dataset):
         else:
             encoded_sequence = encoded_sequence[:1200]
 
-        return torch.tensor(encoded_sequence, dtype = torch.long)
+        return torch.tensor(encoded_sequence, dtype = torch.long).unsqueeze(0)
 
     def len(self):
         return len(self.data)
