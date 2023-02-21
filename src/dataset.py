@@ -71,7 +71,7 @@ class MoleculeDataset(Dataset):
             smiles = sample['smiles']
             sequence = sample['sequence']
             affinity = sample['affinity']
-            activity = sample['activity']
+            # activity = sample['activity']
 
             molecule = Chem.MolFromSmiles(smiles)
             
@@ -85,13 +85,11 @@ class MoleculeDataset(Dataset):
             encoded_sequence = self._encode_sequence(sequence)
 
             data = Data(
-                node_feature = node_features,
-                edge_index = edge_index,
-                edge_attr = edge_attr,
-                sequence = encoded_sequence,
-                affinity = affinity,
-                activity = activity,
-                smiles = smiles,
+                node_feature = torch.FloatTensor(node_features),
+                edge_index = torch.LongTensor(edge_index),
+                edge_attr = torch.FloatTensor(edge_attr),
+                sequence = torch.LongTensor(encoded_sequence),
+                affinity = torch.FloatTensor([affinity])
             )
 
             torch.save(data, os.path.join(self.processed_dir, f"data_{index}.pt"))
@@ -120,7 +118,7 @@ class MoleculeDataset(Dataset):
 
         nodes_feature = np.asarray(nodes_feature)
 
-        return torch.tensor(nodes_feature, dtype = torch.float32)
+        return nodes_feature
 
     def _get_edge_feature(self, mol):
 
@@ -136,14 +134,16 @@ class MoleculeDataset(Dataset):
 
         edges_feature = np.asarray(edges_feature)
 
-        return torch.tensor(edges_feature, dtype = torch.float32)
+        return edges_feature
 
     def _get_adjacency_matrix(self, mol):
+        
         adj_matrix = rdmolops.GetAdjacencyMatrix(mol)
         row, col = np.where(adj_matrix)
         coo = np.array(list(zip(row, col)))
         coo = np.transpose(coo)
-        return torch.tensor(coo, dtype = torch.long)
+        
+        return coo
 
     def _encode_sequence(self, seq):
         encoded_sequence = [AMINOACIDS[x] for x in seq]
@@ -153,7 +153,7 @@ class MoleculeDataset(Dataset):
         else:
             encoded_sequence = encoded_sequence[:1200]
 
-        return torch.tensor(encoded_sequence, dtype = torch.long).unsqueeze(0)
+        return np.expand_dims(encoded_sequence, 0)
 
     def len(self):
         return len(self.data)
@@ -161,3 +161,17 @@ class MoleculeDataset(Dataset):
     def get(self, index):
         data = torch.load(os.path.join(self.processed_dir, f"data_{index}.pt"))
         return data
+
+if __name__ == '__main__':
+
+    from torch_geometric.loader import DataLoader
+
+    dataset = MoleculeDataset('data/papyrus')
+    dls = DataLoader(dataset, shuffle = True, batch_size = 256)
+
+    print("DataLoader Test")
+    for index, batch in enumerate(dls):
+        print(f"Batch {index}: {batch}", end = '\r')
+    print('')
+
+    print('Done')
